@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy all files
 COPY . .
 
-# Install dependencies using existing package-lock.json
-RUN npm install --only=production
+# Install dependencies without running scripts (avoids TypeScript compilation)
+RUN npm install --only=production --ignore-scripts
 
 # Create shared directory
 RUN mkdir -p /app/shared
