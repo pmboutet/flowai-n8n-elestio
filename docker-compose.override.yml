@@ -1,12 +1,37 @@
-version: "3.8"
+version: '3.8'
 
 services:
   python-middleware:
     build:
       context: ./services/python-middleware
-    container_name: python-middleware
+      dockerfile: Dockerfile
+    container_name: flowai-python-middleware
     ports:
       - "8000:8000"
     volumes:
-      - ./python-middleware:/app
-    restart: always
+      - ./services/python-middleware/functions:/app/functions
+      - ./shared:/app/shared
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    depends_on:
+      - md2slides
+    networks:
+      - default
+
+  md2slides:
+    build:
+      context: ./services/md2slides
+      dockerfile: Dockerfile
+    container_name: flowai-md2slides
+    volumes:
+      - ./shared:/app/shared
+      - ./credentials/google-credentials.json:/app/credentials.json:ro
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+      - NODE_ENV=production
+    restart: unless-stopped
+    command: ["node", "index.js"]
+    networks:
+      - default
