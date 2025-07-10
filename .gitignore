@@ -1,0 +1,62 @@
+# Sensitive files
+credentials/google-credentials.json
+*.env
+.env*
+
+# Docker - Elestio managed files
+docker-compose.yml
+.docker/
+docker-compose.yml.backup
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Node modules
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.Python
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Shared data
+shared/*
+!shared/.gitkeep
+
+# Backup files
+*.backup
+*-backup-*
+.cache/
+services/*/google-credentials.json
+.bash_history
+
+# System files - don't version
+.bash_history
+.bash_profile
+.bashrc
+.profile
+.lesshst
+.wget-hsts
+.ssh/
+.config/
+.local/
+.acme.sh/
+.cloud-locale-test.skip

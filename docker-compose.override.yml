@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  python-middleware:
+    build:
+      context: ./python-middleware
+    container_name: python-middleware
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./python-middleware:/app
+    restart: always
