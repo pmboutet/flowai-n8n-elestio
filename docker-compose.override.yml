@@ -3,7 +3,7 @@ version: "3.8"
 services:
   python-middleware:
     build:
-      context: ./python-middleware
+      context: ./services/python-middleware
     container_name: python-middleware
     ports:
       - "8000:8000"
