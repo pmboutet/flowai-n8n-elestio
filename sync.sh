@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Load Elestio environment variables if available
+if [ -f "/opt/app/.env" ]; then
+    source /opt/app/.env
+fi
+
 echo "🔄 Syncing services from main repository..."
 
 # Check if GitHub token is provided
