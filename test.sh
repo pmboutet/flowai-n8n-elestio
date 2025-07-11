@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+# Load Elestio environment variables if available
+if [ -f "/opt/app/.env" ]; then
+    echo "🔧 Loading Elestio environment variables..."
+    source /opt/app/.env
+else
+    echo "⚠️  Elestio .env file not found, using system environment variables"
+fi
+
 echo "🧪 Testing FlowAI deployment..."
 
 # Test if required environment variables are set
@@ -8,14 +16,14 @@ if [ -z "$GITHUB_TOKEN" ]; then
     echo "❌ GITHUB_TOKEN environment variable not set"
     exit 1
 else
-    echo "✅ GITHUB_TOKEN is set"
+    echo "✅ GITHUB_TOKEN is set (${#GITHUB_TOKEN} chars)"
 fi
 
 if [ -z "$GOOGLE_CREDENTIALS_JSON" ]; then
     echo "❌ GOOGLE_CREDENTIALS_JSON environment variable not set"
     exit 1
 else
-    echo "✅ GOOGLE_CREDENTIALS_JSON is set"
+    echo "✅ GOOGLE_CREDENTIALS_JSON is set (${#GOOGLE_CREDENTIALS_JSON} chars)"
 fi
 
 # Test if services are running
