@@ -23,12 +23,13 @@ services:
       context: ./services/md2slides
       dockerfile: Dockerfile
     container_name: flowai-md2slides
+    ports:
+      - "3000:3000"
     volumes:
       - ./shared:/app/shared
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_CREDENTIALS_JSON}
+      - GOOGLE_CREDENTIALS_JSON=${GOOGLE_CREDENTIALS_JSON}
       - NODE_ENV=production
     restart: unless-stopped
-    command: ["node", "index.js"]
     networks:
       - default
