@@ -9,25 +9,30 @@ flowai-n8n-elestio/
 ├── deploy.sh                      # Main deployment script
 ├── sync.sh                        # Service sync script
 ├── docker-compose.override.yml    # Docker services configuration
-├── credentials/                   # Google credentials (not in Git)
 ├── services/                      # Service source code (synced from main repo)
 └── shared/                       # Shared volume data
 ```
 
 ## Environment Variables Required
 
-You need to set this environment variable in your Elestio dashboard:
+You need to set these environment variables in your Elestio dashboard:
 
-- `GITHUB_TOKEN`: Your GitHub personal access token (starts with `github_pat_`)
+### 1. GitHub Token
+- **Name:** `GITHUB_TOKEN`
+- **Value:** Your GitHub personal access token (starts with `github_pat_`)
+
+### 2. Google Credentials
+- **Name:** `GOOGLE_CREDENTIALS_JSON`
+- **Value:** Your complete Google service account JSON (the entire JSON content)
 
 ### How to set environment variables in Elestio:
 
 1. Go to your Elestio dashboard
 2. Select your service
 3. Go to "Environment" tab
-4. Add the variable:
-   - Name: `GITHUB_TOKEN`
-   - Value: `[Your GitHub token here]`
+4. Add the variables:
+   - `GITHUB_TOKEN`: `[Your GitHub token]`
+   - `GOOGLE_CREDENTIALS_JSON`: `[Your complete Google service account JSON]`
 5. Save and restart the service
 
 ## Quick Deployment
@@ -38,15 +43,7 @@ You need to set this environment variable in your Elestio dashboard:
    cd flowai-n8n-elestio
    ```
 
-2. **Add Google credentials:**
-   ```bash
-   # Copy your service account JSON file
-   mkdir -p credentials
-   nano credentials/google-credentials.json
-   # Paste your Google service account JSON content
-   ```
-
-3. **Deploy:**
+2. **Deploy (no manual file setup needed!):**
    ```bash
    chmod +x deploy.sh
    ./deploy.sh
@@ -55,19 +52,18 @@ You need to set this environment variable in your Elestio dashboard:
 ## How it Works
 
 The deployment script automatically:
-1. Pulls latest deployment configuration from Git
-2. Syncs latest service code from the main middleware repository (using GITHUB_TOKEN)
-3. Stops existing services
-4. Rebuilds and starts services
-5. Verifies deployment
+1. Checks that required environment variables are set
+2. Pulls latest deployment configuration from Git
+3. Syncs latest service code from the main middleware repository
+4. Stops existing services
+5. Rebuilds and starts services with environment variables
+6. Verifies deployment
 
 ## Making Changes
 
 - **Infrastructure changes:** Modify files in this repository and commit
 - **Code changes:** Make changes in the main middleware repository
 - **Deploy updates:** Simply run `./deploy.sh` on the server
-
-The sync script ensures you always get the latest code without manual copying.
 
 ## Services
 
@@ -76,15 +72,26 @@ The sync script ensures you always get the latest code without manual copying.
 
 Both services share the `./shared` volume for file exchange.
 
+## Benefits of Environment Variables
+
+✅ **No files to manage on server**  
+✅ **Secure credential storage**  
+✅ **Easy credential rotation**  
+✅ **Fully Git-managed deployment**  
+✅ **Zero manual configuration**  
+
 ## Troubleshooting
 
-If you get "GITHUB_TOKEN environment variable not set" error:
-1. Check that the environment variable is properly set in Elestio
-2. Restart your service after adding the environment variable
-3. The token should have repo access permissions
+Common errors and solutions:
 
-## Security Notes
+1. **"GITHUB_TOKEN environment variable not set"**
+   - Set the GitHub token in Elestio environment variables
+   - Restart the service after adding variables
 
-- GitHub token is stored securely as environment variable
-- Google credentials are not versioned in Git
-- All sensitive data is properly excluded from repository
+2. **"GOOGLE_CREDENTIALS_JSON environment variable not set"**
+   - Set the complete Google service account JSON in Elestio
+   - Make sure it's the full JSON content, not just a file path
+
+3. **Authentication errors**
+   - Verify your GitHub token has repo access
+   - Verify your Google credentials are valid and have the right APIs enabled
