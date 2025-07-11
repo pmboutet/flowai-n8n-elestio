@@ -3,10 +3,16 @@ set -e
 
 echo "🚀 Deploying FlowAI N8N Extension..."
 
-# Check if credentials exist
-if [ ! -f "credentials/google-credentials.json" ]; then
-    echo "❌ Error: Google credentials not found!"
-    echo "Please copy your service account JSON to credentials/google-credentials.json"
+# Check if required environment variables are set
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "❌ Error: GITHUB_TOKEN environment variable not set!"
+    echo "Please set the GITHUB_TOKEN environment variable in Elestio dashboard"
+    exit 1
+fi
+
+if [ -z "$GOOGLE_CREDENTIALS_JSON" ]; then
+    echo "❌ Error: GOOGLE_CREDENTIALS_JSON environment variable not set!"
+    echo "Please set the GOOGLE_CREDENTIALS_JSON environment variable in Elestio dashboard"
     exit 1
 fi
 
