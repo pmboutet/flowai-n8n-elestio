@@ -20,7 +20,11 @@ fi
 mkdir -p shared
 
 echo "🔄 Pulling latest deployment configuration..."
-git pull origin master
+echo "🗑️  Discarding local changes..."
+
+# Force reset to latest remote version
+git fetch origin master
+git reset --hard origin/master
 
 echo "🔄 Syncing latest services code..."
 chmod +x sync.sh
