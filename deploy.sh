@@ -13,8 +13,12 @@ fi
 # Create required directories
 mkdir -p shared
 
-echo "🔄 Pulling latest changes from Git..."
+echo "🔄 Pulling latest deployment configuration..."
 git pull origin master
+
+echo "🔄 Syncing latest services code..."
+chmod +x sync.sh
+./sync.sh
 
 echo "🛑 Stopping existing services..."
 docker-compose down
