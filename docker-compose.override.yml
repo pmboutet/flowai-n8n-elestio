@@ -25,9 +25,8 @@ services:
     container_name: flowai-md2slides
     volumes:
       - ./shared:/app/shared
-      - ./credentials/google-credentials.json:/app/credentials.json:ro
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+      - GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_CREDENTIALS_JSON}
       - NODE_ENV=production
     restart: unless-stopped
     command: ["node", "index.js"]
