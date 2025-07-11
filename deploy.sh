@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+# Load Elestio environment variables if available
+if [ -f "/opt/app/.env" ]; then
+    echo "🔧 Loading Elestio environment variables..."
+    source /opt/app/.env
+else
+    echo "⚠️  Elestio .env file not found, using system environment variables"
+fi
+
 echo "🚀 Deploying FlowAI N8N Extension..."
 
 # Check if required environment variables are set
@@ -15,6 +23,8 @@ if [ -z "$GOOGLE_CREDENTIALS_JSON" ]; then
     echo "Please set the GOOGLE_CREDENTIALS_JSON environment variable in Elestio dashboard"
     exit 1
 fi
+
+echo "✅ Environment variables loaded successfully"
 
 # Create required directories
 mkdir -p shared
