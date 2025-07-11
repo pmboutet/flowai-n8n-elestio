@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   python-middleware:
     build:
@@ -11,6 +10,7 @@ services:
     volumes:
       - ./services/python-middleware/functions:/app/functions
       - ./shared:/app/shared
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -18,7 +18,6 @@ services:
       - md2slides
     networks:
       - default
-
   md2slides:
     build:
       context: ./services/md2slides
