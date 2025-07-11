@@ -14,6 +14,22 @@ flowai-n8n-elestio/
 └── shared/                       # Shared volume data
 ```
 
+## Environment Variables Required
+
+You need to set this environment variable in your Elestio dashboard:
+
+- `GITHUB_TOKEN`: Your GitHub personal access token (starts with `github_pat_`)
+
+### How to set environment variables in Elestio:
+
+1. Go to your Elestio dashboard
+2. Select your service
+3. Go to "Environment" tab
+4. Add the variable:
+   - Name: `GITHUB_TOKEN`
+   - Value: `[Your GitHub token here]`
+5. Save and restart the service
+
 ## Quick Deployment
 
 1. **Clone this repository on your server:**
@@ -25,7 +41,9 @@ flowai-n8n-elestio/
 2. **Add Google credentials:**
    ```bash
    # Copy your service account JSON file
-   cp /path/to/your/credentials.json credentials/google-credentials.json
+   mkdir -p credentials
+   nano credentials/google-credentials.json
+   # Paste your Google service account JSON content
    ```
 
 3. **Deploy:**
@@ -38,7 +56,7 @@ flowai-n8n-elestio/
 
 The deployment script automatically:
 1. Pulls latest deployment configuration from Git
-2. Syncs latest service code from the main middleware repository
+2. Syncs latest service code from the main middleware repository (using GITHUB_TOKEN)
 3. Stops existing services
 4. Rebuilds and starts services
 5. Verifies deployment
@@ -57,3 +75,16 @@ The sync script ensures you always get the latest code without manual copying.
 - **md2slides:** Google Slides generation service
 
 Both services share the `./shared` volume for file exchange.
+
+## Troubleshooting
+
+If you get "GITHUB_TOKEN environment variable not set" error:
+1. Check that the environment variable is properly set in Elestio
+2. Restart your service after adding the environment variable
+3. The token should have repo access permissions
+
+## Security Notes
+
+- GitHub token is stored securely as environment variable
+- Google credentials are not versioned in Git
+- All sensitive data is properly excluded from repository
