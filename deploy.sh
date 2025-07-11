@@ -3,13 +3,18 @@ set -e
 
 echo "🚀 Deploying FlowAI N8N Extension..."
 
+# Check if credentials exist
 if [ ! -f "credentials/google-credentials.json" ]; then
     echo "❌ Error: Google credentials not found!"
     echo "Please copy your service account JSON to credentials/google-credentials.json"
     exit 1
 fi
 
+# Create required directories
 mkdir -p shared
+
+echo "🔄 Pulling latest changes from Git..."
+git pull origin master
 
 echo "🛑 Stopping existing services..."
 docker-compose down
