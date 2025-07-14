@@ -21,7 +21,9 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # Function to safely load credentials
 load_credentials() {
     local credentials_file="$CREDENTIALS_DIR/credentials.env"
+    local google_json_file="$CREDENTIALS_DIR/google.json"
     
+    # Check credentials.env file
     if [ ! -f "$credentials_file" ]; then
         log_error "Credentials file not found: $credentials_file"
         log_info "Create it with:"
@@ -31,16 +33,35 @@ load_credentials() {
         return 1
     fi
     
-    # Check if file is readable
+    # Check google.json file
+    if [ ! -f "$google_json_file" ]; then
+        log_error "Google credentials file not found: $google_json_file"
+        log_info "Create it with your Google service account JSON:"
+        log_info "nano $google_json_file"
+        return 1
+    fi
+    
+    # Check if files are readable
     if [ ! -r "$credentials_file" ]; then
         log_error "Cannot read credentials file: $credentials_file"
         return 1
     fi
     
-    # Load the environment variables
+    if [ ! -r "$google_json_file" ]; then
+        log_error "Cannot read Google credentials file: $google_json_file"
+        return 1
+    fi
+    
+    # Load the environment variables from credentials.env
     set -a  # automatically export all variables
     source "$credentials_file"
     set +a  # stop automatically exporting
+    
+    # Load Google credentials from JSON file
+    if [ -f "$google_json_file" ]; then
+        export GOOGLE_CREDENTIALS_JSON=$(cat "$google_json_file")
+        export GOOGLE_APPLICATION_CREDENTIALS="$google_json_file"
+    fi
     
     # Validate that critical variables are set
     local missing_vars=()
@@ -55,30 +76,36 @@ load_credentials() {
     
     if [ ${#missing_vars[@]} -gt 0 ]; then
         log_error "Missing required variables: ${missing_vars[*]}"
-        log_info "Edit $credentials_file and add these variables"
+        log_info "Check your credentials files:"
+        log_info "- $credentials_file (for GITHUB_TOKEN)"
+        log_info "- $google_json_file (for Google credentials)"
         return 1
     fi
     
     # Validate JSON format for Google credentials
     if ! echo "$GOOGLE_CREDENTIALS_JSON" | jq . >/dev/null 2>&1; then
-        log_error "GOOGLE_CREDENTIALS_JSON is not valid JSON"
+        log_error "Google credentials JSON is not valid"
+        log_info "Check file: $google_json_file"
         return 1
     fi
     
     log_success "Credentials loaded successfully"
     log_info "GITHUB_TOKEN: ${GITHUB_TOKEN:0:10}... (${#GITHUB_TOKEN} chars)"
     log_info "GOOGLE_CREDENTIALS_JSON: Valid JSON (${#GOOGLE_CREDENTIALS_JSON} chars)"
+    log_info "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
     
     return 0
 }
 
-# Function to create example credentials file
+# Function to create example credentials files
 create_example_credentials() {
-    local example_file="$CREDENTIALS_DIR/credentials.env.example"
+    local credentials_file="$CREDENTIALS_DIR/credentials.env.example"
+    local google_json_file="$CREDENTIALS_DIR/google.json.example"
     
     mkdir -p "$CREDENTIALS_DIR"
     
-    cat > "$example_file" << 'EOF'
+    # Create credentials.env example
+    cat > "$credentials_file" << 'EOF'
 # FlowAI Credentials Configuration
 # Copy this file to credentials.env and fill in your actual values
 
@@ -86,30 +113,86 @@ create_example_credentials() {
 # Get from: https://github.com/settings/tokens
 # Required scopes: repo, workflow
 GITHUB_TOKEN=ghp_your_token_here
-
-# Google Service Account Credentials (JSON format)
-# Get from: Google Cloud Console > IAM & Admin > Service Accounts
-# Enable APIs: Google Slides API, Google Drive API
-GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"service@project.iam.gserviceaccount.com","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"...","universe_domain":"googleapis.com"}
 EOF
     
-    log_success "Example credentials file created: $example_file"
-    log_info "Copy it to credentials.env and edit with your values:"
-    log_info "cp $example_file $CREDENTIALS_DIR/credentials.env"
+    # Create google.json example
+    cat > "$google_json_file" << 'EOF'
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "your-private-key-id",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n",
+  "client_email": "service-account@your-project.iam.gserviceaccount.com",
+  "client_id": "your-client-id",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/service-account%40your-project.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+EOF
+    
+    log_success "Example credentials files created:"
+    log_info "- $credentials_file"
+    log_info "- $google_json_file"
+    log_info ""
+    log_info "Copy and edit them with your values:"
+    log_info "cp $credentials_file $CREDENTIALS_DIR/credentials.env"
+    log_info "cp $google_json_file $CREDENTIALS_DIR/google.json"
     log_info "nano $CREDENTIALS_DIR/credentials.env"
+    log_info "nano $CREDENTIALS_DIR/google.json"
+}
+
+# Function to migrate from old format
+migrate_credentials() {
+    local old_credentials_file="$CREDENTIALS_DIR/credentials.env"
+    local new_google_json_file="$CREDENTIALS_DIR/google.json"
+    
+    if [ -f "$old_credentials_file" ] && grep -q "GOOGLE_CREDENTIALS_JSON" "$old_credentials_file"; then
+        log_info "Migrating Google credentials from old format..."
+        
+        # Extract Google JSON from credentials.env
+        local google_json=$(grep "GOOGLE_CREDENTIALS_JSON=" "$old_credentials_file" | cut -d'=' -f2-)
+        
+        if [ -n "$google_json" ] && [ "$google_json" != "GOOGLE_CREDENTIALS_JSON=" ]; then
+            # Write to google.json file
+            echo "$google_json" | jq . > "$new_google_json_file" 2>/dev/null
+            
+            if [ $? -eq 0 ]; then
+                log_success "Google credentials migrated to $new_google_json_file"
+                
+                # Remove GOOGLE_CREDENTIALS_JSON from credentials.env
+                grep -v "GOOGLE_CREDENTIALS_JSON=" "$old_credentials_file" > "$old_credentials_file.tmp" && \
+                mv "$old_credentials_file.tmp" "$old_credentials_file"
+                
+                log_info "Removed GOOGLE_CREDENTIALS_JSON from credentials.env"
+                log_info "Migration completed successfully!"
+            else
+                log_error "Failed to migrate - invalid JSON format"
+                rm -f "$new_google_json_file"
+                return 1
+            fi
+        fi
+    fi
 }
 
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Script is being executed directly
-    echo "🔐 FlowAI Credentials Loader"
-    echo "============================="
+    echo "🔐 FlowAI Credentials Loader v2.0"
+    echo "=================================="
     
-    if [ "$1" = "create-example" ]; then
-        create_example_credentials
-    else
-        load_credentials
-    fi
+    case "${1:-}" in
+        "create-example")
+            create_example_credentials
+            ;;
+        "migrate")
+            migrate_credentials
+            ;;
+        *)
+            load_credentials
+            ;;
+    esac
 else
     # Script is being sourced
     load_credentials
