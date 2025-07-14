@@ -6,6 +6,11 @@ credentials/*.pem
 .env
 .env.*
 
+# Backup and temporary credential files
+credentials/*.bak
+credentials/*.backup
+credentials/*.tmp
+
 # Docker
 docker-compose.override.local.yml
 
