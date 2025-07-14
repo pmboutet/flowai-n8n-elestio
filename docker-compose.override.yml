@@ -29,38 +29,42 @@ services:
       - "3000:3000"
     volumes:
       - ./shared:/workspace
-      # Mount credentials from local file system
+      # Mount credentials directory read-only
       - ./credentials:/app/credentials:ro
     environment:
-      - GOOGLE_CREDENTIALS_JSON=${GOOGLE_CREDENTIALS_JSON}
       - NODE_ENV=production
       - NODE_OPTIONS=--max-old-space-size=2048
-      # Path to credentials file inside container
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-credentials.json
+      # Path to Google credentials file
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google.json
     restart: unless-stopped
     networks:
       - default
-    # Initialize Google credentials from environment variable
+    # Initialize Google credentials from mounted file
     entrypoint: |
       sh -c '
-        # Create credentials directory
+        # Create credentials directory for md2googleslides
         mkdir -p /home/md2slides/.md2googleslides
         
-        # Write Google credentials from environment variable to expected location
-        if [ ! -z "$$GOOGLE_CREDENTIALS_JSON" ]; then
-          echo "📝 Setting up Google credentials from environment..."
-          echo "$$GOOGLE_CREDENTIALS_JSON" > /home/md2slides/.md2googleslides/client_id.json
+        # Check if Google credentials file exists
+        if [ -f "/app/credentials/google.json" ]; then
+          echo "📝 Setting up Google credentials from file..."
+          
+          # Copy to expected location for md2googleslides
+          cp /app/credentials/google.json /home/md2slides/.md2googleslides/client_id.json
           chmod 600 /home/md2slides/.md2googleslides/client_id.json
           chown md2slides:nodejs /home/md2slides/.md2googleslides/client_id.json
-          echo "✅ Google credentials configured"
+          
+          # Validate JSON format
+          if jq . /app/credentials/google.json >/dev/null 2>&1; then
+            echo "✅ Google credentials configured and validated"
+          else
+            echo "❌ Invalid Google credentials JSON format"
+            exit 1
+          fi
         else
-          echo "⚠️ No Google credentials found in GOOGLE_CREDENTIALS_JSON"
-        fi
-        
-        # Also create a copy at the standard location for Google client libraries
-        if [ ! -z "$$GOOGLE_CREDENTIALS_JSON" ]; then
-          echo "$$GOOGLE_CREDENTIALS_JSON" > /app/credentials/google-credentials.json
-          chmod 600 /app/credentials/google-credentials.json
+          echo "⚠️ No Google credentials file found at /app/credentials/google.json"
+          echo "Please ensure the file exists and is mounted correctly"
+          exit 1
         fi
         
         # Start the service in server mode for API calls
