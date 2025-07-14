@@ -13,6 +13,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
     restart: unless-stopped
     depends_on:
       - md2slides
@@ -28,12 +29,14 @@ services:
       - "3000:3000"
     volumes:
       - ./shared:/workspace
-      # Mount credentials from environment variable
-      - /tmp/google-credentials:/home/md2slides/.md2googleslides
+      # Mount credentials from local file system
+      - ./credentials:/app/credentials:ro
     environment:
       - GOOGLE_CREDENTIALS_JSON=${GOOGLE_CREDENTIALS_JSON}
       - NODE_ENV=production
       - NODE_OPTIONS=--max-old-space-size=2048
+      # Path to credentials file inside container
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-credentials.json
     restart: unless-stopped
     networks:
       - default
@@ -43,15 +46,21 @@ services:
         # Create credentials directory
         mkdir -p /home/md2slides/.md2googleslides
         
-        # Write Google credentials from environment variable
+        # Write Google credentials from environment variable to expected location
         if [ ! -z "$$GOOGLE_CREDENTIALS_JSON" ]; then
-          echo "📝 Setting up Google credentials..."
+          echo "📝 Setting up Google credentials from environment..."
           echo "$$GOOGLE_CREDENTIALS_JSON" > /home/md2slides/.md2googleslides/client_id.json
           chmod 600 /home/md2slides/.md2googleslides/client_id.json
           chown md2slides:nodejs /home/md2slides/.md2googleslides/client_id.json
           echo "✅ Google credentials configured"
         else
-          echo "⚠️  No Google credentials found in GOOGLE_CREDENTIALS_JSON"
+          echo "⚠️ No Google credentials found in GOOGLE_CREDENTIALS_JSON"
+        fi
+        
+        # Also create a copy at the standard location for Google client libraries
+        if [ ! -z "$$GOOGLE_CREDENTIALS_JSON" ]; then
+          echo "$$GOOGLE_CREDENTIALS_JSON" > /app/credentials/google-credentials.json
+          chmod 600 /app/credentials/google-credentials.json
         fi
         
         # Start the service in server mode for API calls
