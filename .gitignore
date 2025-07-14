@@ -1,10 +1,12 @@
-# Credentials
+# Credentials - NEVER commit these!
+credentials/*.env
 credentials/*.json
 credentials/*.key
 credentials/*.pem
+.env
+.env.*
 
 # Docker
-.env
 docker-compose.override.local.yml
 
 # Shared data
@@ -22,3 +24,14 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
