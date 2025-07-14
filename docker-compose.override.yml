@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   python-middleware:
     build:
@@ -10,15 +11,12 @@ services:
     volumes:
       - ./services/python-middleware/functions:/app/functions
       - ./shared:/app/shared
-      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     restart: unless-stopped
     depends_on:
       - md2slides
-    networks:
-      - default
   
   md2slides:
     build:
@@ -29,49 +27,32 @@ services:
       - "3000:3000"
     volumes:
       - ./shared:/workspace
-      # Mount credentials directory read-only
-      - ./credentials:/app/credentials:ro
+      # Mount credentials directory from parent (Elestio structure)
+      - ../credentials:/app/credentials:ro
     environment:
       - NODE_ENV=production
       - NODE_OPTIONS=--max-old-space-size=2048
-      # Path to Google credentials file
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google.json
     restart: unless-stopped
-    networks:
-      - default
-    # Initialize Google credentials from mounted file
     entrypoint: |
       sh -c '
-        # Create credentials directory for md2googleslides
+        echo "🚀 Starting FlowAI md2slides service..."
         mkdir -p /home/md2slides/.md2googleslides
         
-        # Check if Google credentials file exists
         if [ -f "/app/credentials/google.json" ]; then
-          echo "📝 Setting up Google credentials from file..."
-          
-          # Copy to expected location for md2googleslides
+          echo "📝 Configuring Google credentials..."
           cp /app/credentials/google.json /home/md2slides/.md2googleslides/client_id.json
           chmod 600 /home/md2slides/.md2googleslides/client_id.json
-          chown md2slides:nodejs /home/md2slides/.md2googleslides/client_id.json
           
-          # Validate JSON format
           if jq . /app/credentials/google.json >/dev/null 2>&1; then
-            echo "✅ Google credentials configured and validated"
+            echo "✅ Google credentials validated"
           else
-            echo "❌ Invalid Google credentials JSON format"
+            echo "❌ Invalid Google credentials"
             exit 1
           fi
         else
-          echo "⚠️ No Google credentials file found at /app/credentials/google.json"
-          echo "Please ensure the file exists and is mounted correctly"
-          exit 1
+          echo "⚠️ No Google credentials found"
         fi
         
-        # Start the service in server mode for API calls
-        echo "🚀 Starting md2googleslides service..."
         exec node bin/md2gslides.js --server --port 3000
       '
-
-networks:
-  default:
-    name: flowai-network
