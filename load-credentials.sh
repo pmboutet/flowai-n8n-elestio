@@ -4,7 +4,7 @@
 # Usage: source ./load-credentials.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CREDENTIALS_DIR="$SCRIPT_DIR/credentials"
+CREDENTIALS_DIR="$(dirname "$SCRIPT_DIR")/credentials"
 
 # Colors for output
 RED='\033[0;31m'
@@ -180,7 +180,7 @@ migrate_credentials() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Script is being executed directly
     echo "🔐 FlowAI Credentials Loader v2.0"
-    echo "=================================="
+    echo "====================================="
     
     case "${1:-}" in
         "create-example")
