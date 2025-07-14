@@ -6,6 +6,12 @@ if [ -f "/opt/app/.env" ]; then
     source /opt/app/.env
 fi
 
+# Load credentials from the credentials loader
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/load-credentials.sh" ]; then
+    source "$SCRIPT_DIR/load-credentials.sh"
+fi
+
 echo "🔄 Syncing services from main repository..."
 
 # Check if GitHub token is provided
